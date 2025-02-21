@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#1d1d1d" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>>Attention Required!</title>
+  <title>Attention Required!</title>
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/monsara/email-assets/refs/heads/main/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="512x512" href="https://raw.githubusercontent.com/monsara/email-assets/refs/heads/main/images/android-chrome-512x512.png">
   <link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/monsara/email-assets/refs/heads/main/images/android-chrome-192x192.png">
@@ -217,8 +217,8 @@
       <p>If you believe this to be an error, please open a
         <a href="mailto:support@prematch.com.ua?subject=Forbidden Access | Ray ID:::RAY_ID::&body=Describe issue here...">support@prematch.com.ua</a>
       </p>
-      <p>Ray ID: ::RAY_ID::</p>
-      <p>Client IP: ::CLIENT_IP::</p>
+      <p>Ray ID: <span id="rayId">::RAY_ID::</span></p>
+      <p>Client IP: <span id="clientIp">::CLIENT_IP::</span></p>
     </div>
 
     <div class="image-wrapper">
@@ -228,6 +228,71 @@
       </picture>
     </div>
   </main>
+
+  <script>
+    class ErrorPage {
+      constructor() {
+        this.rayId = this.generateRayId();
+        this.initializePage();
+      }
+
+      generateRayId() {
+        const rayId = sessionStorage.getItem('rayId') ||
+          Math.random().toString(36).substring(2, 15);
+
+        sessionStorage.setItem('rayId', rayId);
+        return rayId;
+      }
+
+      async getClientIP() {
+        const cachedIP = sessionStorage.getItem('clientIP');
+        if (cachedIP) return cachedIP;
+
+        const services = [
+          'https://api.ipify.org?format=json',
+          'https://api.ip.sb/jsonip',
+          'https://api.myip.com'
+        ];
+
+        for (const service of services) {
+          try {
+            const response = await fetch(service);
+            const data = await response.json();
+            const ip = data.ip;
+
+            sessionStorage.setItem('clientIP', ip);
+            return ip;
+          } catch {
+            continue;
+          }
+        }
+        return 'Unable to get IP';
+      }
+
+      updateMailtoLink() {
+        const mailtoLink = document.querySelector('a[href^="mailto:"]');
+        if (!mailtoLink) return;
+
+        const originalHref = mailtoLink.href;
+        mailtoLink.href = originalHref.replace('::RAY_ID::', this.rayId);
+      }
+
+      updatePageElements() {
+        document.getElementById('rayId').textContent = this.rayId;
+        this.getClientIP().then(ip => {
+          document.getElementById('clientIp').textContent = ip;
+        });
+      }
+
+      initializePage() {
+        this.updateMailtoLink();
+        this.updatePageElements();
+      }
+    }
+
+    // Initialize the page
+    new ErrorPage();
+  </script>
 </body>
 
 </html>
